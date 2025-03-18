@@ -4,13 +4,15 @@ namespace Snowfire\Beautymail;
 
 use Illuminate\Contracts\Mail\Mailer;
 use Illuminate\Mail\PendingMail;
+use Illuminate\Support\Facades\Request;
+use Illuminate\Mail\SentMessage;
 
 class Beautymail implements Mailer
 {
     /**
      * Contains settings for emails processed by Beautymail.
      *
-     * @var
+     * @var array
      */
     private $settings;
 
@@ -24,12 +26,12 @@ class Beautymail implements Mailer
     /**
      * Initialise the settings and mailer.
      *
-     * @param $settings
+     * @param array $settings
      */
     public function __construct($settings)
     {
         $this->settings = $settings;
-        $this->mailer = app()->make('Illuminate\Contracts\Mail\Mailer');
+        $this->mailer = app()->make(Mailer::class);
         $this->setLogoPath();
     }
 
@@ -51,7 +53,7 @@ class Beautymail implements Mailer
     /**
      * Retrieve the settings.
      *
-     * @return mixed
+     * @return array
      */
     public function getData()
     {
@@ -92,6 +94,9 @@ class Beautymail implements Mailer
      */
     public function sendNow($mailable, array $data = [], $callback = null)
     {
+        $data = array_merge($this->settings, $data);
+
+        return $this->mailer->sendNow($mailable, $data, $callback);
     }
 
     /**
@@ -101,13 +106,13 @@ class Beautymail implements Mailer
      * @param array           $data
      * @param \Closure|string $callback
      *
-     * @return void
+     * @return mixed
      */
     public function queue($view, array $data, $callback)
     {
         $data = array_merge($this->settings, $data);
 
-        $this->mailer->queue($view, $data, $callback);
+        return $this->mailer->queue($view, $data, $callback);
     }
 
     /**
@@ -147,13 +152,13 @@ class Beautymail implements Mailer
     }
 
     /**
-     * @return mixed
+     * @return void
      */
     private function setLogoPath()
     {
         $this->settings['logo']['path'] = str_replace(
             '%PUBLIC%',
-            \Request::getSchemeAndHttpHost(),
+            Request::getSchemeAndHttpHost(),
             $this->settings['logo']['path']
         );
     }

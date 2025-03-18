@@ -33,7 +33,7 @@ class BeautymailServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__.'/../../views', 'beautymail');
 
         if (version_compare($this->app->version(), '9.0', '>=')) {
-            Event::listen('Illuminate\Mail\Events\MessageSending', 'Snowfire\Beautymail\SymfonyCssInlinerPlugin');
+            Event::listen(MessageSending::class, SymfonyCssInlinerPlugin::class);
         } else {
             try {
                 $this->app['mailer']->getSwiftMailer()->registerPlugin(new SwiftCssInlinerPlugin());
@@ -50,17 +50,18 @@ class BeautymailServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->app->singleton('Snowfire\Beautymail\Beautymail',
-            function ($app) {
-                return new \Snowfire\Beautymail\Beautymail(
-                    array_merge(
-                        config('beautymail.view'),
-                        [
-                            'css' => !is_null(config('beautymail.css')) && count(config('beautymail.css')) > 0 ? implode(' ', config('beautymail.css')) : '',
-                        ]
-                    )
-                );
-            });
+        $this->app->singleton(Beautymail::class, function ($app) {
+            return new Beautymail(
+                array_merge(
+                    config('beautymail.view', []),
+                    [
+                        'css' => !is_null(config('beautymail.css')) && count(config('beautymail.css')) > 0 ? implode(' ', config('beautymail.css')) : '',
+                    ]
+                )
+            );
+        });
+
+        $this->app->alias(Beautymail::class, 'Snowfire\Beautymail\Beautymail');
     }
 
     /**
@@ -70,6 +71,6 @@ class BeautymailServiceProvider extends ServiceProvider
      */
     public function provides()
     {
-        return [];
+        return [Beautymail::class];
     }
 }
